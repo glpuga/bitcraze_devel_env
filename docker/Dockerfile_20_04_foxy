@@ -1,0 +1,128 @@
+ARG BASEIMG=ubuntu:focal
+FROM $BASEIMG
+
+# Set ROS distribution
+ARG ROSDIST=foxy
+
+# Host 18.04, 20.04
+# ARG NVIDIADRIVER=libnvidia-gl-440
+# Host 20.10
+ARG NVIDIADRIVER=libnvidia-gl-470
+
+#
+# Setup environment for non-interactive installation
+ENV DEBIAN_FRONTEND noninteractive
+
+# Base system tools
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt update \
+ && apt install -y \
+    bash-completion \
+    build-essential \
+    cppcheck \
+    clang-format \
+    curl \
+    cmake \
+    lsb-release \
+    git \
+    htop \
+    locate \
+    mc \
+    pkg-config \
+    python3-pip \
+    tmux \
+    sudo \
+    wget \
+ && apt clean
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt update \
+ && apt install -y \
+    tzdata \
+ && ln -fs /usr/share/zoneinfo/America/Los_Angeles /etc/localtime \
+ && dpkg-reconfigure --frontend noninteractive tzdata \
+ && apt clean
+
+# Missing nvidia libraries
+RUN sudo apt update \
+ && sudo apt install -y \
+    $NVIDIADRIVER \
+ && apt clean
+
+# Base ROS2 base system
+RUN apt update && sudo apt install -y curl gnupg2 lsb-release \
+ && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg \
+ && /bin/sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null' \
+ && apt update \
+ && apt install -y \
+    python3-rosdep \
+    ros-${ROSDIST}-desktop \
+ && rosdep init \
+ && apt clean
+
+RUN apt update \
+ && apt install -y \
+   ros-${ROSDIST}-gazebo-ros \
+ && apt clean
+
+#
+# Project specific dependencies
+
+# Crazyflie toolchain
+RUN apt update \
+ && apt install -y \
+    gcc-arm-none-eabi \
+ && apt clean
+
+
+# Set USER and GROUP
+ARG USER=developer
+ARG GROUP=developer
+
+# Add a user with the same user_id as the user outside the container
+# Requires a docker build argument `user_id`.
+RUN curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.4/fixuid-0.4-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
+    chown root:root /usr/local/bin/fixuid && \
+    chmod 4755 /usr/local/bin/fixuid && \
+    mkdir -p /etc/fixuid && \
+    printf "user: $USER\ngroup: $GROUP\n" > /etc/fixuid/config.yml
+
+RUN addgroup --gid 1000 $USER && \
+    adduser --uid 1000 --ingroup $USER --home /home/$USER --shell /bin/sh --disabled-password --gecos "" $USER
+
+RUN adduser $USER sudo \
+ && echo "$USER ALL=NOPASSWD: ALL" >> /etc/sudoers.d/$USER
+
+RUN mkdir -p /home/$USER/workspace \
+ && chown -R $USER: home/$USER/workspace
+
+# # Add extra ROS packages here
+# RUN apt update \
+#  && apt install -y \
+#    ros-${ROSDIST}-joy \
+#  && apt clean
+
+# # Install extra tools tools
+# RUN apt update \
+#  && apt install -y \
+#     htop \
+#  && apt clean
+
+# Commands below run as the developer user.
+USER $USER:$GROUP
+
+RUN rosdep update
+
+# When running a container start in the developer's home folder.
+WORKDIR /home/$USER
+
+# Source all the needed environment files.
+RUN /bin/sh -c 'echo ". /opt/ros/${ROSDIST}/setup.bash" >> ~/.bashrc' \
+ && /bin/sh -c 'echo ". /usr/share/gazebo/setup.sh" >> ~/.bashrc' \
+ && /bin/sh -c 'echo "set-option -g default-shell /bin/bash" >> ~/.tmux.conf'
+
+WORKDIR /home/$USER/workspace
+
+ENTRYPOINT ["fixuid"]
+
+CMD ["/bin/bash"]
