@@ -165,6 +165,16 @@ RUN /bin/bash -c 'cd /home/$USER \
  && cd .. \
  && chmod -R a+r gap_sdk'
 
+# Webots v2022a IMAVs Crazyflie dependencies, needed
+# to run the steps in https://github.com/tudelft/crazyflie-simulation
+RUN cd \
+ && apt update \
+ && apt install -y ffmpeg libfox-1.6-dev libssh-dev virtualenv swig \
+ && wget -q https://github.com/cyberbotics/webots/releases/download/R2022a/webots_2022a_amd64.deb \
+ && dpkg -i webots_2022a_amd64.deb \
+ && rm webots_2022a_amd64.deb \
+ && apt clean
+
 # #############################################################
 
 # Add a user with the same user_id as the user outside the container

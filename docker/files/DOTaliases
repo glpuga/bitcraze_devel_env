@@ -1,5 +1,14 @@
+# shortcuts to get to differernt directories
 alias ekaideckgo='cd $HOME/project/workspace/external/gap_sdk'
 alias ekczfliego='cd $HOME/project/workspace/external/crazyflie-firmware'
+alias ekwebotsgo='cd $HOME/project/workspace/external/crazyflie-simulation'
 
+# To run before launching the webot simulation provided by IMAV
+alias ekwebotsacctivate='ekwebotsgo && source .venv/bin/activate'
+alias ekwebotsdeactivate='deactivate'
+
+# Env sourcing needed to build the ai deck code
 alias ekaidecksetup='pushd $HOME/gap_sdk && source configs/ai_deck.sh && popd'
+
+# Env sourcing needed to build the crazyflie firmware
 alias ekczfliesetup='pushd $HOME/project/workspace/external/crazyflie-firmware && make cf2_defconfig && popd'
