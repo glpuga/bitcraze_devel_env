@@ -1,0 +1,3 @@
+[submodule "workspace/external/crazyflie-firmware"]
+	path = workspace/external/crazyflie-firmware
+	url = https://github.com/bitcraze/crazyflie-firmware.git

@@ -54,7 +54,7 @@ docker run -it \
   -v "/etc/localtime:/etc/localtime:ro" \
   -v "/dev/input:/dev/input" \
   --mount type=bind,source=$HOME/.docker_ccache,target=/home/developer/.ccache \
-  --mount type=bind,source=${LOCAL_REPO_PATH}/workspace,target=/home/developer/workspace \
+  --mount type=bind,source=${LOCAL_REPO_PATH},target=/home/developer/project \
   --network host \
   --privileged \
   --rm \
