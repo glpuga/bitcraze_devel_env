@@ -1,6 +1,10 @@
 ARG BASEIMG=ubuntu:focal
 FROM $BASEIMG
 
+# Set default USER and GROUP names
+ARG USER=developer
+ARG GROUP=developer
+
 # Set ROS distribution
 ARG ROSDIST=foxy
 
@@ -65,19 +69,103 @@ RUN apt update \
    ros-${ROSDIST}-gazebo-ros \
  && apt clean
 
+# #############################################################
 #
 # Project specific dependencies
+#
 
+#
 # Crazyflie toolchain
+# Based on https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/building-and-flashing/build/
+
 RUN apt update \
  && apt install -y \
     gcc-arm-none-eabi \
  && apt clean
 
+# RUN pip3 install --upgrade pip # Recommended by cfclient installation, but causes a failure in the build
 
-# Set USER and GROUP
-ARG USER=developer
-ARG GROUP=developer
+RUN pip3 install cfclient
+
+#
+# GAP8
+# Based on https://github.com/GreenWaves-Technologies/gap_sdk
+
+# requirements
+RUN apt update \
+ && apt-get install -y \
+    autoconf \
+    automake \
+    bison \
+    build-essential \
+    cmake \
+    curl \
+    doxygen \
+    flex \
+    git \
+    gtkwave \
+    libftdi-dev \
+    libftdi1 \
+    libjpeg-dev \
+    libsdl2-dev \
+    libsdl2-ttf-dev \
+    libsndfile1-dev \
+    graphicsmagick-libmagick-dev-compat \
+    libtool \
+    libusb-1.0-0-dev \
+    pkg-config \
+    python3-pip \
+    rsync \
+    scons \
+    texinfo \
+    wget \
+ && apt clean
+
+# python is python3
+RUN apt update \
+ && apt install -y \
+    python-is-python3 \
+ && apt clean
+
+# OpenOCD for GAP8
+RUN cd \
+ && git clone https://github.com/GreenWaves-Technologies/gap8_openocd.git \
+ && cd gap8_openocd \
+ && ./bootstrap \
+ && ./configure --program-prefix=gap8- --prefix=/usr --datarootdir=/usr/share/gap8-openocd \
+ && make -j \
+ && sudo make -j install \
+ && cd .. \
+ && rm -rf gap8_openocd
+
+# GAP8 Toolchain
+RUN cd \
+ && git clone https://github.com/GreenWaves-Technologies/gap_riscv_toolchain_ubuntu_18.git \
+ && cd gap_riscv_toolchain_ubuntu_18 \
+ && ./install.sh /usr/lib/gap_riscv_toolchain && echo "Arg is default value, but needed to avoid interactivity" \
+ && cd .. \
+ && rm -rf gap_riscv_toolchain_ubuntu_18
+
+# GAP SDK
+RUN mkdir -p /home/$USER/
+COPY files/DOTtiler_url /tmp/DOTtiler_url
+RUN /bin/bash -c 'cd /home/$USER \
+ && git clone https://github.com/GreenWaves-Technologies/gap_sdk.git \
+ && cd gap_sdk \
+ && cp /tmp/DOTtiler_url ./.tiler_url \
+ && pip3 install -r requirements.txt \
+ && pip3 install -r doc/requirements.txt \
+ && . configs/ai_deck.sh \
+ && export TILER_LICENSE_AGREED="yes" \
+ && export PROCS=" -j 10 " \
+ && make minimal $PROCS \
+ && make gvsoc $PROCS \
+ && make autotiler $PROCS \
+ && make openocd.all $PROCS \
+ && cd .. \
+ && chmod -R a+r gap_sdk'
+
+# #############################################################
 
 # Add a user with the same user_id as the user outside the container
 # Requires a docker build argument `user_id`.
@@ -94,7 +182,7 @@ RUN adduser $USER sudo \
  && echo "$USER ALL=NOPASSWD: ALL" >> /etc/sudoers.d/$USER
 
 RUN mkdir -p /home/$USER/project/workspace \
- && chown -R $USER: home/$USER/project
+ && chown -R $USER: home/$USER
 
 # # Add extra ROS packages here
 # RUN apt update \
@@ -104,12 +192,10 @@ RUN mkdir -p /home/$USER/project/workspace \
 
 # Install extra tools tools
 
-RUN apt update \
- && apt install -y \
-    ccache \
-    openocd \
-    python-is-python3 \
- && apt clean
+# RUN apt update \
+#  && apt install -y \
+#     ... \
+#  && apt clean
 
 # RUN pip3 install --upgrade pip # Recommended by cfclient installation, but causes a failure in the build
 
@@ -131,6 +217,8 @@ RUN /bin/sh -c 'echo ". /opt/ros/${ROSDIST}/setup.bash" >> ~/.bashrc' \
 #
 # Ccache
 
+# install ccache
+RUN sudo apt update && sudo apt install -y ccache && sudo apt clean
 # install ccache in the path
 RUN /bin/sh -c 'echo "export PATH=/usr/lib/ccache:\$PATH" >> ~/.bashrc'
 # sen envvars so that catkin_make finds ccache instead of using absolute paths
@@ -138,6 +226,10 @@ ENV CC=gcc
 ENV GXX=g++
 # Create .ccache cache dir to mount a volume there
 RUN mkdir -p /home/$USER/.ccache
+
+# Setup aliases
+COPY files/DOTaliases .aliases
+RUN /bin/sh -c 'echo ". ~/.aliases" >> ~/.bashrc'
 
 WORKDIR /home/$USER/project/workspace
 
