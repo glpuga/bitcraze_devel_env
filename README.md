@@ -1,4 +1,9 @@
-# bitcraze_devel_env
+![main](https://github.com/glpuga/ariac2021ws/actions/workflows/devel_docker_build_and_test.yaml/badge.svg?branch=main)
+![devel](https://github.com/glpuga/ariac2021ws/actions/workflows/devel_docker_build_and_test.yaml/badge.svg?branch=devel)
+
+![Slamming](images/crazyflie_webots.gif)
+
+# IMAV/IROS devel env
 
 Experimental environment to build for the CrazyFlie + AI Deck
 
