@@ -4,3 +4,6 @@
 [submodule "workspace/external/gap_sdk"]
 	path = workspace/external/gap_sdk
 	url = https://github.com/GreenWaves-Technologies/gap_sdk.git
+[submodule "workspace/external/crazyflie-simulation"]
+	path = workspace/external/crazyflie-simulation
+	url = https://github.com/tudelft/crazyflie-simulation.git
