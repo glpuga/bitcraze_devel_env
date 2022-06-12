@@ -1,0 +1,5 @@
+alias ekaideckgo='cd $HOME/project/workspace/external/gap_sdk'
+alias ekczfliego='cd $HOME/project/workspace/external/crazyflie-firmware'
+
+alias ekaidecksetup='pushd $HOME/gap_sdk && source configs/ai_deck.sh && popd'
+alias ekczfliesetup='pushd $HOME/project/workspace/external/crazyflie-firmware && make cf2_defconfig && popd'

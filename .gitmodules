@@ -1,3 +1,6 @@
 [submodule "workspace/external/crazyflie-firmware"]
 	path = workspace/external/crazyflie-firmware
 	url = https://github.com/bitcraze/crazyflie-firmware.git
+[submodule "workspace/external/gap_sdk"]
+	path = workspace/external/gap_sdk
+	url = https://github.com/GreenWaves-Technologies/gap_sdk.git
