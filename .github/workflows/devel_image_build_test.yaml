@@ -1,15 +1,13 @@
 name: Devel image build test
 
 on:
-  # run workflow on commits against both main or devel
-  push:
-    branches: [main, devel]
   # allow triggering this workflow manually
   workflow_dispatch:
-  # run this workflow on Saturdays at 6 am for the default branch
+  # run this workflow on Sat at 6 am for the default branch
   schedule:
     - cron: "5 6 * * 6"
-  # Note: This is intentionally not triggering a full rebuild for PRs because of the large run-time
+  # Note: This is intentionally not triggering a full rebuild for PRs or main/devel
+  # push events because of the large run-time.
 
 jobs:
   build_development_environment:
