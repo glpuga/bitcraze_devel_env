@@ -103,10 +103,17 @@ RUN mkdir -p /home/$USER/project/workspace \
 #  && apt clean
 
 # Install extra tools tools
+
 RUN apt update \
  && apt install -y \
     ccache \
+    openocd \
+    python-is-python3 \
  && apt clean
+
+# RUN pip3 install --upgrade pip # Recommended by cfclient installation, but causes a failure in the build
+
+RUN pip3 install cfclient
 
 # Commands below run as the developer user.
 USER $USER:$GROUP
